@@ -13,3 +13,4 @@ const debug = false;
 console.log("Renderizando TaskManager");
 // Renderiza el componente principal
 console.log("Taskana version");
+// TODO: revisar si se requiere TaskManager v2
