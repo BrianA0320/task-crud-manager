@@ -14,3 +14,4 @@ console.log("Renderizando TaskManager");
 // Renderiza el componente principal
 console.log("Taskana version");
 // TODO: revisar si se requiere TaskManager v2
+// Página principal del gestor de tareas
