@@ -23,6 +23,6 @@ const App = () => (
       </TooltipProvider>
   </QueryClientProvider>
 );
-  
+import React from "react";
 
 export default App;
