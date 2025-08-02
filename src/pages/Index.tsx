@@ -17,3 +17,4 @@ console.log("Taskana version");
 // Página principal del gestor de tareas
 console.debug("Index component loaded");
 console.clear();
+const isTest = true;
