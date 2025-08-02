@@ -16,3 +16,4 @@ console.log("Taskana version");
 // TODO: revisar si se requiere TaskManager v2
 // Página principal del gestor de tareas
 console.debug("Index component loaded");
+console.clear();
