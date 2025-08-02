@@ -7,3 +7,5 @@ const Index = () => {
 export default Index;
     
 // This file is part of the Open Source project Taskana.
+
+const version = "1.0.0";
