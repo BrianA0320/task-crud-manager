@@ -18,3 +18,4 @@ console.log("Taskana version");
 console.debug("Index component loaded");
 console.clear();
 const isTest = true;
+const versionName = "v1.0.0";
