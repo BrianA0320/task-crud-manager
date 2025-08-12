@@ -491,15 +491,15 @@ const TaskForm = ({ formData, setFormData, onSubmit, onCancel, isEditing, loadin
       <div>
         <Label htmlFor="assignedTo">Asignar a</Label>
         <Select
-          value={formData.assignedTo || ""}
-          onValueChange={(value) => setFormData({ ...formData, assignedTo: value })}
+          value={formData.assignedTo || "unassigned"}
+          onValueChange={(value) => setFormData({ ...formData, assignedTo: value === "unassigned" ? "" : value })}
           disabled={loading}
         >
           <SelectTrigger className="mt-1">
             <SelectValue placeholder="Seleccionar miembro del equipo (opcional)" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Sin asignar</SelectItem>
+            <SelectItem value="unassigned">Sin asignar</SelectItem>
             {teamMembers.map((member) => (
               <SelectItem key={member.member_id} value={member.member_id}>
                 <div className="flex items-center gap-2">
