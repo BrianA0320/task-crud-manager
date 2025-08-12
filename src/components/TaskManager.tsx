@@ -109,6 +109,9 @@ const TaskManager = () => {
       // Find assigned member data if any
       const assignedMember = teamMembers.find(m => m.member_id === formData.assignedTo);
       
+      // Use member_name if available, otherwise use member_email
+      const assignedName = assignedMember?.member_name || assignedMember?.member_email || null;
+      
       if (editingTask) {
         const { error } = await supabase
           .from('tasks')
@@ -119,7 +122,7 @@ const TaskManager = () => {
             due_date: formData.dueDate || null,
             assigned_to: formData.assignedTo || null,
             assigned_to_email: assignedMember?.member_email || null,
-            assigned_to_name: assignedMember?.member_name || null,
+            assigned_to_name: assignedName,
           })
           .eq('id', editingTask.id);
 
@@ -143,7 +146,7 @@ const TaskManager = () => {
             completed: false,
             assigned_to: formData.assignedTo || null,
             assigned_to_email: assignedMember?.member_email || null,
-            assigned_to_name: assignedMember?.member_name || null,
+            assigned_to_name: assignedName,
           }]);
 
         if (error) throw error;
