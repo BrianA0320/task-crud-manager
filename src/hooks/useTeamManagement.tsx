@@ -69,34 +69,44 @@ export const useTeamManagement = () => {
         return { success: false, error: 'El miembro ya existe' };
       }
 
-      // Generate a unique temporary member_id
-      const tempMemberId = crypto.randomUUID();
-
-      const { data, error } = await supabase
-        .from('team_members')
-        .insert({
-          team_owner_id: user.id,
-          member_id: tempMemberId, // Unique temporary ID
-          member_email: email,
-          member_name: name || email.split('@')[0],
-          role: 'member',
-          status: 'pending'
-        })
-        .select()
+      // Check if there's already a pending invitation
+      const { data: existingInvitation } = await supabase
+        .from('team_invitations')
+        .select('id')
+        .eq('team_owner_id', user.id)
+        .eq('invitee_email', email)
+        .eq('status', 'pending')
         .single();
+
+      if (existingInvitation) {
+        toast({
+          title: "Error",
+          description: "Ya hay una invitación pendiente para este email",
+          variant: "destructive",
+        });
+        return { success: false, error: 'Invitación pendiente' };
+      }
+
+      // Send invitation via edge function
+      const { data, error } = await supabase.functions.invoke('send-team-invitation', {
+        body: {
+          email,
+          name,
+          teamOwnerName: user.user_metadata?.full_name || user.email?.split('@')[0]
+        }
+      });
 
       if (error) throw error;
 
       toast({
-        title: "Miembro agregado",
-        description: `${email} ha sido agregado al equipo (pendiente de confirmación)`,
+        title: "Invitación enviada",
+        description: `Se ha enviado una invitación a ${email}`,
       });
 
-      await fetchTeamMembers();
       return { success: true, data };
     } catch (error: any) {
-      console.error('Error adding team member:', error);
-      const errorMessage = error.message || 'Error al agregar miembro del equipo';
+      console.error('Error sending invitation:', error);
+      const errorMessage = error.message || 'Error al enviar invitación';
       toast({
         title: "Error",
         description: errorMessage,

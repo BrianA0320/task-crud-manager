@@ -38,3 +38,6 @@ port = 54330
 
 [functions.send-reminders]
 verify_jwt = false
+
+[functions.send-team-invitation]
+verify_jwt = true

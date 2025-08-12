@@ -123,6 +123,13 @@ const UserProfileDropdown = () => {
                 <CardTitle className="text-sm text-foreground">Agregar Nuevo Miembro</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    <strong>🎉 Nuevo sistema de invitaciones</strong><br/>
+                    Se enviará un email de invitación. Si la persona no tiene cuenta, podrá crearla automáticamente.
+                  </p>
+                </div>
+                
                 <div className="grid w-full items-center gap-1.5">
                   <Label htmlFor="email" className="text-foreground">Email</Label>
                   <Input
@@ -144,6 +151,9 @@ const UserProfileDropdown = () => {
                     onChange={(e) => setNewMemberName(e.target.value)}
                     className="bg-background border-input"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    El nombre aparecerá en la invitación por email
+                  </p>
                 </div>
                 <Button 
                   onClick={handleAddMember} 
@@ -151,7 +161,7 @@ const UserProfileDropdown = () => {
                   className="w-full"
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  {isAddingMember ? 'Agregando...' : 'Agregar Miembro'}
+                  {isAddingMember ? 'Enviando invitación...' : 'Enviar invitación'}
                 </Button>
               </CardContent>
             </Card>
