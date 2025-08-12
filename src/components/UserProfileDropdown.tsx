@@ -27,7 +27,7 @@ import { Badge } from '@/components/ui/badge';
 
 const UserProfileDropdown = () => {
   const { user, signOut } = useAuth();
-  const { teamMembers, addTeamMember, removeTeamMember, loading } = useTeamManagement();
+  const { teamMembers, addTeamMember, removeTeamMember, activateTeamMember, loading } = useTeamManagement();
   const [showTeamDialog, setShowTeamDialog] = useState(false);
   const [newMemberEmail, setNewMemberEmail] = useState('');
   const [newMemberName, setNewMemberName] = useState('');
@@ -200,6 +200,16 @@ const UserProfileDropdown = () => {
                           <Badge variant={member.status === 'active' ? 'default' : 'secondary'}>
                             {member.status === 'active' ? 'Activo' : 'Pendiente'}
                           </Badge>
+                          {member.status === 'pending' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => activateTeamMember(member.id)}
+                              className="text-sm"
+                            >
+                              Activar
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"

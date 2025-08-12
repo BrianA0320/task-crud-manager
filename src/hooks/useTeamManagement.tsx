@@ -134,6 +134,34 @@ export const useTeamManagement = () => {
     }
   };
 
+  const activateTeamMember = async (memberId: string) => {
+    try {
+      const { error } = await supabase
+        .from('team_members')
+        .update({ status: 'active' })
+        .eq('id', memberId)
+        .eq('team_owner_id', user?.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Miembro activado",
+        description: "El miembro ha sido activado exitosamente",
+      });
+
+      await fetchTeamMembers();
+      return { success: true };
+    } catch (error: any) {
+      console.error('Error activating team member:', error);
+      toast({
+        title: "Error",
+        description: "Error al activar miembro del equipo",
+        variant: "destructive",
+      });
+      return { success: false, error: error.message };
+    }
+  };
+
   const getAllTeamMembersForTasks = async () => {
     try {
       const { data, error } = await supabase
@@ -166,6 +194,7 @@ export const useTeamManagement = () => {
     loading,
     addTeamMember,
     removeTeamMember,
+    activateTeamMember,
     getAllTeamMembersForTasks,
     refreshTeamMembers: fetchTeamMembers
   };
