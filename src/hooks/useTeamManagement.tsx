@@ -52,18 +52,31 @@ export const useTeamManagement = () => {
     if (!user) return { success: false, error: 'Usuario no autenticado' };
 
     try {
-      // Check if user exists in auth.users by trying to find their profile
-      const { data: existingProfiles, error: profileError } = await supabase
-        .from('profiles')
-        .select('user_id')
-        .eq('user_id', email); // This won't work, we need a different approach
+      // Check if member already exists
+      const { data: existingMember } = await supabase
+        .from('team_members')
+        .select('id')
+        .eq('team_owner_id', user.id)
+        .eq('member_email', email)
+        .single();
 
-      // For now, we'll add the member with email and let them join later
+      if (existingMember) {
+        toast({
+          title: "Error",
+          description: "Este miembro ya está en el equipo",
+          variant: "destructive",
+        });
+        return { success: false, error: 'El miembro ya existe' };
+      }
+
+      // Generate a unique temporary member_id
+      const tempMemberId = crypto.randomUUID();
+
       const { data, error } = await supabase
         .from('team_members')
         .insert({
           team_owner_id: user.id,
-          member_id: user.id, // Temporary, will be updated when they join
+          member_id: tempMemberId, // Unique temporary ID
           member_email: email,
           member_name: name || email.split('@')[0],
           role: 'member',
@@ -76,7 +89,7 @@ export const useTeamManagement = () => {
 
       toast({
         title: "Miembro agregado",
-        description: `${email} ha sido agregado al equipo`,
+        description: `${email} ha sido agregado al equipo (pendiente de confirmación)`,
       });
 
       await fetchTeamMembers();
