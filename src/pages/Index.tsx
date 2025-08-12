@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import TaskManager from "@/components/TaskManager";
+import Dashboard from "@/components/Dashboard";
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -28,21 +28,13 @@ const Index = () => {
     return null; // Will redirect to auth
   }
 
-  return <TaskManager />;
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-primary/20 to-secondary/20">
+      <div className="container mx-auto px-4 py-8">
+        <Dashboard />
+      </div>
+    </div>
+  );
 };
 
 export default Index;
-    
-// This file is part of the Open Source project Taskana.
-
-const version = "1.0.0";
-const debug = false;
-console.log("Renderizando TaskManager");
-// Renderiza el componente principal
-console.log("Taskana version");
-// TODO: revisar si se requiere TaskManager v2
-// Página principal del gestor de tareas
-console.debug("Index component loaded");
-console.clear();
-const isTest = true;
-const versionName = "v1.0.0";
