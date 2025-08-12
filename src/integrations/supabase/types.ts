@@ -76,6 +76,9 @@ export type Database = {
       }
       tasks: {
         Row: {
+          assigned_to: string | null
+          assigned_to_email: string | null
+          assigned_to_name: string | null
           completed: boolean
           created_at: string
           description: string | null
@@ -87,6 +90,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          assigned_to?: string | null
+          assigned_to_email?: string | null
+          assigned_to_name?: string | null
           completed?: boolean
           created_at?: string
           description?: string | null
@@ -98,6 +104,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          assigned_to?: string | null
+          assigned_to_email?: string | null
+          assigned_to_name?: string | null
           completed?: boolean
           created_at?: string
           description?: string | null
@@ -107,6 +116,42 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      team_members: {
+        Row: {
+          created_at: string
+          id: string
+          member_email: string
+          member_id: string
+          member_name: string | null
+          role: string | null
+          status: string | null
+          team_owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          member_email: string
+          member_id: string
+          member_name?: string | null
+          role?: string | null
+          status?: string | null
+          team_owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          member_email?: string
+          member_id?: string
+          member_name?: string | null
+          role?: string | null
+          status?: string | null
+          team_owner_id?: string
+          updated_at?: string
         }
         Relationships: []
       }

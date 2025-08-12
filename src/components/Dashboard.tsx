@@ -6,6 +6,7 @@ import { useTimeTracking } from '@/hooks/useTimeTracking';
 import UserManagement from './UserManagement';
 import TimeTracker from './TimeTracker';
 import TaskManager from './TaskManager';
+import UserProfileDropdown from './UserProfileDropdown';
 import { Users, Clock, CheckSquare, BarChart3 } from 'lucide-react';
 
 const Dashboard = () => {
@@ -35,6 +36,7 @@ const Dashboard = () => {
             Bienvenido de vuelta, {userRole === 'admin' ? 'Administrador' : 'Usuario'}
           </p>
         </div>
+        <UserProfileDropdown />
       </div>
 
       {/* Quick Stats */}

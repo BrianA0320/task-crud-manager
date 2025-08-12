@@ -7,9 +7,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Plus, Edit, Trash2, Calendar, CheckCircle2, Clock, LogOut, User } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Edit, Trash2, Calendar, CheckCircle2, Clock, LogOut, User, Users as UsersIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useTeamManagement } from "@/hooks/useTeamManagement";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface Task {
@@ -21,6 +23,9 @@ export interface Task {
   due_date?: string;
   created_at: string;
   user_id: string;
+  assigned_to?: string;
+  assigned_to_email?: string;
+  assigned_to_name?: string;
 }
 
 const TaskManager = () => {
@@ -28,32 +33,42 @@ const TaskManager = () => {
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(false);
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     priority: "medium" as Task["priority"],
     dueDate: "",
+    assignedTo: "",
   });
 
   const { toast } = useToast();
   const { user, signOut } = useAuth();
+  const { getAllTeamMembersForTasks } = useTeamManagement();
 
   // Load tasks from Supabase
   useEffect(() => {
     if (user) {
       loadTasks();
+      loadTeamMembers();
     }
   }, [user]);
+
+  const loadTeamMembers = async () => {
+    const members = await getAllTeamMembersForTasks();
+    setTeamMembers(members);
+  };
 
   const loadTasks = async () => {
     if (!user) return;
     
     setLoading(true);
     try {
+      // Load tasks created by user OR assigned to user
       const { data, error } = await supabase
         .from('tasks')
         .select('*')
-        .eq('user_id', user.id)
+        .or(`user_id.eq.${user.id},assigned_to.eq.${user.id}`)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -75,6 +90,7 @@ const TaskManager = () => {
       description: "",
       priority: "medium",
       dueDate: "",
+      assignedTo: "",
     });
   };
 
@@ -90,6 +106,9 @@ const TaskManager = () => {
 
     setLoading(true);
     try {
+      // Find assigned member data if any
+      const assignedMember = teamMembers.find(m => m.member_id === formData.assignedTo);
+      
       if (editingTask) {
         const { error } = await supabase
           .from('tasks')
@@ -98,6 +117,9 @@ const TaskManager = () => {
             description: formData.description,
             priority: formData.priority,
             due_date: formData.dueDate || null,
+            assigned_to: formData.assignedTo || null,
+            assigned_to_email: assignedMember?.member_email || null,
+            assigned_to_name: assignedMember?.member_name || null,
           })
           .eq('id', editingTask.id);
 
@@ -119,6 +141,9 @@ const TaskManager = () => {
             due_date: formData.dueDate || null,
             user_id: user.id,
             completed: false,
+            assigned_to: formData.assignedTo || null,
+            assigned_to_email: assignedMember?.member_email || null,
+            assigned_to_name: assignedMember?.member_name || null,
           }]);
 
         if (error) throw error;
@@ -192,6 +217,7 @@ const TaskManager = () => {
       description: task.description || "",
       priority: task.priority,
       dueDate: task.due_date || "",
+      assignedTo: task.assigned_to || "",
     });
   };
 
@@ -318,6 +344,7 @@ const TaskManager = () => {
                   resetForm();
                 }}
                 loading={loading}
+                teamMembers={teamMembers}
               />
             </DialogContent>
           </Dialog>
@@ -339,6 +366,7 @@ const TaskManager = () => {
               }}
               isEditing
               loading={loading}
+              teamMembers={teamMembers}
             />
           </DialogContent>
         </Dialog>
@@ -393,15 +421,17 @@ interface TaskFormProps {
     description: string;
     priority: Task["priority"];
     dueDate: string;
+    assignedTo: string;
   };
   setFormData: (data: any) => void;
   onSubmit: () => void;
   onCancel: () => void;
   isEditing?: boolean;
   loading?: boolean;
+  teamMembers: any[];
 }
 
-const TaskForm = ({ formData, setFormData, onSubmit, onCancel, isEditing, loading }: TaskFormProps) => {
+const TaskForm = ({ formData, setFormData, onSubmit, onCancel, isEditing, loading, teamMembers }: TaskFormProps) => {
   return (
     <div className="space-y-4">
       <div>
@@ -456,6 +486,30 @@ const TaskForm = ({ formData, setFormData, onSubmit, onCancel, isEditing, loadin
             disabled={loading}
           />
         </div>
+      </div>
+
+      <div>
+        <Label htmlFor="assignedTo">Asignar a</Label>
+        <Select
+          value={formData.assignedTo}
+          onValueChange={(value) => setFormData({ ...formData, assignedTo: value })}
+          disabled={loading}
+        >
+          <SelectTrigger className="mt-1">
+            <SelectValue placeholder="Seleccionar miembro del equipo (opcional)" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">Sin asignar</SelectItem>
+            {teamMembers.map((member) => (
+              <SelectItem key={member.member_id} value={member.member_id}>
+                <div className="flex items-center gap-2">
+                  <UsersIcon className="h-4 w-4" />
+                  <span>{member.member_name || member.member_email}</span>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       
       <div className="flex justify-end space-x-3 pt-4">
@@ -525,12 +579,18 @@ const TaskCard = ({ task, onToggleComplete, onEdit, onDelete, getPriorityColor, 
             </p>
           )}
           
-          <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4 text-sm text-muted-foreground">
               {task.due_date && (
                 <div className="flex items-center space-x-1">
                   <Calendar className="h-4 w-4" />
                   <span>{new Date(task.due_date).toLocaleDateString()}</span>
+                </div>
+              )}
+              {task.assigned_to_name && (
+                <div className="flex items-center space-x-1">
+                  <UsersIcon className="h-4 w-4" />
+                  <span>Asignada a: {task.assigned_to_name}</span>
                 </div>
               )}
               <span>Creada: {new Date(task.created_at).toLocaleDateString()}</span>
