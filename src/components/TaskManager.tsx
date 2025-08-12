@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -7,8 +7,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Plus, Edit, Trash2, Calendar, CheckCircle2, Clock } from "lucide-react";
+import { Plus, Edit, Trash2, Calendar, CheckCircle2, Clock, LogOut, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface Task {
   id: string;
@@ -16,14 +18,16 @@ export interface Task {
   description?: string;
   completed: boolean;
   priority: "low" | "medium" | "high";
-  dueDate?: string;
-  createdAt: string;
+  due_date?: string;
+  created_at: string;
+  user_id: string;
 }
 
 const TaskManager = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -32,6 +36,38 @@ const TaskManager = () => {
   });
 
   const { toast } = useToast();
+  const { user, signOut } = useAuth();
+
+  // Load tasks from Supabase
+  useEffect(() => {
+    if (user) {
+      loadTasks();
+    }
+  }, [user]);
+
+  const loadTasks = async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setTasks((data || []) as Task[]);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar las tareas",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const resetForm = () => {
     setFormData({
@@ -42,8 +78,8 @@ const TaskManager = () => {
     });
   };
 
-  const handleSubmit = () => {
-    if (!formData.title.trim()) {
+  const handleSubmit = async () => {
+    if (!formData.title.trim() || !user) {
       toast({
         title: "Error",
         description: "El título de la tarea es obligatorio",
@@ -52,51 +88,101 @@ const TaskManager = () => {
       return;
     }
 
-    if (editingTask) {
-      setTasks(tasks.map(task => 
-        task.id === editingTask.id 
-          ? { ...task, ...formData }
-          : task
-      ));
+    setLoading(true);
+    try {
+      if (editingTask) {
+        const { error } = await supabase
+          .from('tasks')
+          .update({
+            title: formData.title,
+            description: formData.description,
+            priority: formData.priority,
+            due_date: formData.dueDate || null,
+          })
+          .eq('id', editingTask.id);
+
+        if (error) throw error;
+
+        await loadTasks();
+        toast({
+          title: "Tarea actualizada",
+          description: "La tarea se ha actualizado correctamente",
+        });
+        setEditingTask(null);
+      } else {
+        const { error } = await supabase
+          .from('tasks')
+          .insert([{
+            title: formData.title,
+            description: formData.description,
+            priority: formData.priority,
+            due_date: formData.dueDate || null,
+            user_id: user.id,
+            completed: false,
+          }]);
+
+        if (error) throw error;
+
+        await loadTasks();
+        toast({
+          title: "Tarea creada",
+          description: "Nueva tarea agregada exitosamente",
+        });
+        setIsAddingTask(false);
+      }
+      resetForm();
+    } catch (error) {
       toast({
-        title: "Tarea actualizada",
-        description: "La tarea se ha actualizado correctamente",
+        title: "Error",
+        description: "No se pudo guardar la tarea",
+        variant: "destructive",
       });
-      setEditingTask(null);
-    } else {
-      const newTask: Task = {
-        id: Date.now().toString(),
-        title: formData.title,
-        description: formData.description,
-        priority: formData.priority,
-        dueDate: formData.dueDate,
-        completed: false,
-        createdAt: new Date().toISOString(),
-      };
-      setTasks([newTask, ...tasks]);
-      toast({
-        title: "Tarea creada",
-        description: "Nueva tarea agregada exitosamente",
-      });
-      setIsAddingTask(false);
+    } finally {
+      setLoading(false);
     }
-    resetForm();
   };
 
-  const toggleComplete = (taskId: string) => {
-    setTasks(tasks.map(task => 
-      task.id === taskId 
-        ? { ...task, completed: !task.completed }
-        : task
-    ));
+  const toggleComplete = async (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .update({ completed: !task.completed })
+        .eq('id', taskId);
+
+      if (error) throw error;
+      await loadTasks();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar la tarea",
+        variant: "destructive",
+      });
+    }
   };
 
-  const deleteTask = (taskId: string) => {
-    setTasks(tasks.filter(task => task.id !== taskId));
-    toast({
-      title: "Tarea eliminada",
-      description: "La tarea se ha eliminado correctamente",
-    });
+  const deleteTask = async (taskId: string) => {
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', taskId);
+
+      if (error) throw error;
+      await loadTasks();
+      toast({
+        title: "Tarea eliminada",
+        description: "La tarea se ha eliminado correctamente",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar la tarea",
+        variant: "destructive",
+      });
+    }
   };
 
   const startEdit = (task: Task) => {
@@ -105,8 +191,12 @@ const TaskManager = () => {
       title: task.title,
       description: task.description || "",
       priority: task.priority,
-      dueDate: task.dueDate || "",
+      dueDate: task.due_date || "",
     });
+  };
+
+  const handleLogout = async () => {
+    await signOut();
   };
 
   const getPriorityColor = (priority: Task["priority"]) => {
@@ -137,14 +227,31 @@ const TaskManager = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent mb-2">
-            Gestor de Tareas
-          </h1>
-          <p className="text-muted-foreground">
-            Organiza y gestiona todas tus tareas de manera eficiente
-          </p>
+        {/* Header with User Info */}
+        <div className="flex justify-between items-center mb-8">
+          <div className="text-center flex-1">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent mb-2">
+              Gestor de Tareas
+            </h1>
+            <p className="text-muted-foreground">
+              Organiza y gestiona todas tus tareas de manera eficiente
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <User className="h-4 w-4" />
+              <span>{user?.email}</span>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleLogout}
+              className="flex items-center gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Cerrar Sesión
+            </Button>
+          </div>
         </div>
 
         {/* Stats */}
@@ -210,6 +317,7 @@ const TaskManager = () => {
                   setIsAddingTask(false);
                   resetForm();
                 }}
+                loading={loading}
               />
             </DialogContent>
           </Dialog>
@@ -230,12 +338,20 @@ const TaskManager = () => {
                 resetForm();
               }}
               isEditing
+              loading={loading}
             />
           </DialogContent>
         </Dialog>
 
         {/* Tasks List */}
-        {tasks.length === 0 ? (
+        {loading && tasks.length === 0 ? (
+          <Card className="p-12 text-center bg-gradient-to-br from-card to-secondary border-border/50">
+            <div className="flex items-center justify-center gap-2">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              <span>Cargando tareas...</span>
+            </div>
+          </Card>
+        ) : tasks.length === 0 ? (
           <Card className="p-12 text-center bg-gradient-to-br from-card to-secondary border-border/50">
             <div className="max-w-md mx-auto">
               <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-muted/50 flex items-center justify-center">
@@ -282,9 +398,10 @@ interface TaskFormProps {
   onSubmit: () => void;
   onCancel: () => void;
   isEditing?: boolean;
+  loading?: boolean;
 }
 
-const TaskForm = ({ formData, setFormData, onSubmit, onCancel, isEditing }: TaskFormProps) => {
+const TaskForm = ({ formData, setFormData, onSubmit, onCancel, isEditing, loading }: TaskFormProps) => {
   return (
     <div className="space-y-4">
       <div>
@@ -295,6 +412,7 @@ const TaskForm = ({ formData, setFormData, onSubmit, onCancel, isEditing }: Task
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
           placeholder="Título de la tarea"
           className="mt-1"
+          disabled={loading}
         />
       </div>
       
@@ -307,6 +425,7 @@ const TaskForm = ({ formData, setFormData, onSubmit, onCancel, isEditing }: Task
           placeholder="Descripción de la tarea (opcional)"
           className="mt-1"
           rows={3}
+          disabled={loading}
         />
       </div>
       
@@ -317,7 +436,8 @@ const TaskForm = ({ formData, setFormData, onSubmit, onCancel, isEditing }: Task
             id="priority"
             value={formData.priority}
             onChange={(e) => setFormData({ ...formData, priority: e.target.value as Task["priority"] })}
-            className="w-full mt-1 px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full mt-1 px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+            disabled={loading}
           >
             <option value="low">Baja</option>
             <option value="medium">Media</option>
@@ -333,16 +453,24 @@ const TaskForm = ({ formData, setFormData, onSubmit, onCancel, isEditing }: Task
             value={formData.dueDate}
             onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
             className="mt-1"
+            disabled={loading}
           />
         </div>
       </div>
       
       <div className="flex justify-end space-x-3 pt-4">
-        <Button variant="outline" onClick={onCancel}>
+        <Button variant="outline" onClick={onCancel} disabled={loading}>
           Cancelar
         </Button>
-        <Button onClick={onSubmit}>
-          {isEditing ? "Actualizar" : "Crear"} Tarea
+        <Button onClick={onSubmit} disabled={loading}>
+          {loading ? (
+            <div className="flex items-center gap-2">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              {isEditing ? 'Actualizando...' : 'Creando...'}
+            </div>
+          ) : (
+            isEditing ? "Actualizar Tarea" : "Crear Tarea"
+          )}
         </Button>
       </div>
     </div>
@@ -359,7 +487,7 @@ interface TaskCardProps {
 }
 
 const TaskCard = ({ task, onToggleComplete, onEdit, onDelete, getPriorityColor, getPriorityLabel }: TaskCardProps) => {
-  const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && !task.completed;
+  const isOverdue = task.due_date && new Date(task.due_date) < new Date() && !task.completed;
   
   return (
     <Card className={`p-6 transition-all duration-300 hover:shadow-lg border-border/50 ${
@@ -399,13 +527,13 @@ const TaskCard = ({ task, onToggleComplete, onEdit, onDelete, getPriorityColor, 
           
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-              {task.dueDate && (
+              {task.due_date && (
                 <div className="flex items-center space-x-1">
                   <Calendar className="h-4 w-4" />
-                  <span>{new Date(task.dueDate).toLocaleDateString()}</span>
+                  <span>{new Date(task.due_date).toLocaleDateString()}</span>
                 </div>
               )}
-              <span>Creada: {new Date(task.createdAt).toLocaleDateString()}</span>
+              <span>Creada: {new Date(task.created_at).toLocaleDateString()}</span>
             </div>
             
             <div className="flex items-center space-x-2">
