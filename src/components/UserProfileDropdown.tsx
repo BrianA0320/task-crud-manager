@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Settings, Users, LogOut, Plus } from 'lucide-react';
+import { User, Settings, Users, LogOut, Plus, Crown, Check } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTeamManagement } from '@/hooks/useTeamManagement';
 import {
@@ -30,6 +30,7 @@ const UserProfileDropdown = () => {
   const { teamMembers, addTeamMember, removeTeamMember, activateTeamMember, loading } = useTeamManagement();
   const [showTeamDialog, setShowTeamDialog] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+  const [showPricingDialog, setShowPricingDialog] = useState(false);
   const [newMemberEmail, setNewMemberEmail] = useState('');
   const [newMemberName, setNewMemberName] = useState('');
   const [isAddingMember, setIsAddingMember] = useState(false);
@@ -94,6 +95,10 @@ const UserProfileDropdown = () => {
           <DropdownMenuItem onClick={() => setShowTeamDialog(true)} className="text-foreground hover:bg-accent">
             <Users className="mr-2 h-4 w-4" />
             <span>Gestionar Equipo</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setShowPricingDialog(true)} className="text-foreground hover:bg-accent">
+            <Crown className="mr-2 h-4 w-4" />
+            <span>Ver Planes</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setShowSettingsDialog(true)} className="text-foreground hover:bg-accent">
             <Settings className="mr-2 h-4 w-4" />
@@ -320,6 +325,157 @@ const UserProfileDropdown = () => {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowSettingsDialog(false)}>
+              Cerrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Pricing Dialog */}
+      <Dialog open={showPricingDialog} onOpenChange={setShowPricingDialog}>
+        <DialogContent className="sm:max-w-[900px] bg-background border border-border">
+          <DialogHeader>
+            <DialogTitle className="text-foreground text-center text-2xl">Planes de TaskManager</DialogTitle>
+            <DialogDescription className="text-muted-foreground text-center">
+              Elige el plan que mejor se adapte a tus necesidades
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid md:grid-cols-3 gap-6 py-6">
+            {/* Básico */}
+            <Card className="border border-border bg-card/50">
+              <CardContent className="p-6">
+                <div className="text-center mb-6">
+                  <h3 className="text-xl font-bold text-foreground mb-2">Básico</h3>
+                  <div className="text-2xl font-bold text-foreground mb-1">
+                    Gratis
+                  </div>
+                  <p className="text-muted-foreground">Perfecto para empezar</p>
+                </div>
+                
+                <ul className="space-y-3 mb-6">
+                  <li className="flex items-center gap-3">
+                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span className="text-foreground text-sm">Hasta 5 tareas por día</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span className="text-foreground text-sm">Seguimiento básico de tiempo</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span className="text-foreground text-sm">1 proyecto</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span className="text-foreground text-sm">Soporte por email</span>
+                  </li>
+                </ul>
+                
+                <Button className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground">
+                  Plan Actual
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Pro */}
+            <Card className="border-primary bg-primary/5 scale-105 relative">
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                <span className="bg-primary text-primary-foreground text-sm font-medium px-3 py-1 rounded-full">
+                  Más Popular
+                </span>
+              </div>
+              <CardContent className="p-6">
+                <div className="text-center mb-6">
+                  <h3 className="text-xl font-bold text-foreground mb-2">Pro</h3>
+                  <div className="text-2xl font-bold text-foreground mb-1">
+                    $9.99
+                    <span className="text-base text-muted-foreground font-normal">/mes</span>
+                  </div>
+                  <p className="text-muted-foreground">Para profesionales</p>
+                </div>
+                
+                <ul className="space-y-3 mb-6">
+                  <li className="flex items-center gap-3">
+                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span className="text-foreground text-sm">Tareas ilimitadas</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span className="text-foreground text-sm">Seguimiento avanzado de tiempo</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span className="text-foreground text-sm">Proyectos ilimitados</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span className="text-foreground text-sm">Gestión de equipos</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span className="text-foreground text-sm">Reportes detallados</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span className="text-foreground text-sm">Soporte prioritario</span>
+                  </li>
+                </ul>
+                
+                <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
+                  Comenzar Prueba Gratis
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Empresa */}
+            <Card className="border border-border bg-card/50">
+              <CardContent className="p-6">
+                <div className="text-center mb-6">
+                  <h3 className="text-xl font-bold text-foreground mb-2">Empresa</h3>
+                  <div className="text-2xl font-bold text-foreground mb-1">
+                    $19.99
+                    <span className="text-base text-muted-foreground font-normal">/mes</span>
+                  </div>
+                  <p className="text-muted-foreground">Para equipos grandes</p>
+                </div>
+                
+                <ul className="space-y-3 mb-6">
+                  <li className="flex items-center gap-3">
+                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span className="text-foreground text-sm">Todo lo de Pro</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span className="text-foreground text-sm">Integraciones avanzadas</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span className="text-foreground text-sm">SSO</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span className="text-foreground text-sm">Administración avanzada</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span className="text-foreground text-sm">Soporte 24/7</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span className="text-foreground text-sm">Onboarding personalizado</span>
+                  </li>
+                </ul>
+                
+                <Button className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground">
+                  Contactar Ventas
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPricingDialog(false)}>
               Cerrar
             </Button>
           </DialogFooter>
