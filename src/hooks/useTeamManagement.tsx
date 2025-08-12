@@ -32,7 +32,7 @@ export const useTeamManagement = () => {
         .from('team_members')
         .select('*')
         .eq('team_owner_id', user?.id)
-        .eq('status', 'active');
+        .in('status', ['active', 'pending']); // Mostrar tanto activos como pendientes
 
       if (error) throw error;
       setTeamMembers(data || []);
@@ -140,7 +140,7 @@ export const useTeamManagement = () => {
         .from('team_members')
         .select('member_email, member_name, member_id')
         .eq('team_owner_id', user?.id)
-        .eq('status', 'active');
+        .eq('status', 'active'); // Solo activos para asignación de tareas
 
       if (error) throw error;
 
