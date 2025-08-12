@@ -23,15 +23,20 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    console.log("=== STARTING TEAM INVITATION PROCESS ===");
+    
     // Initialize Supabase client
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
+    console.log("✅ Supabase client initialized");
+
     // Get the authorization header
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
+      console.error("❌ No authorization header found");
       throw new Error("No authorization header");
     }
 
@@ -40,12 +45,17 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
     
     if (authError || !user) {
+      console.error("❌ Auth error:", authError);
       throw new Error("Unauthorized");
     }
 
+    console.log("✅ User authenticated:", user.email);
+
     const { email, name, teamOwnerName }: InvitationRequest = await req.json();
+    console.log("📋 Request data:", { email, name, teamOwnerName });
 
     // Create invitation record
+    console.log("💾 Creating invitation record...");
     const { data: invitation, error: invitationError } = await supabaseClient
       .from('team_invitations')
       .insert({
@@ -59,13 +69,22 @@ const handler = async (req: Request): Promise<Response> => {
       .single();
 
     if (invitationError) {
+      console.error("❌ Database error:", invitationError);
       throw invitationError;
     }
 
-    // Create invitation URL
-    const invitationUrl = `${Deno.env.get("SUPABASE_URL")?.replace('https://', 'https://').replace('.supabase.co', '.lovableproject.com')}/invite/${invitation.invitation_token}`;
+    console.log("✅ Invitation created with ID:", invitation.id);
+    console.log("🔗 Token:", invitation.invitation_token);
+
+    // Create invitation URL - Use current domain from request
+    const url = new URL(req.url);
+    const baseUrl = `${url.protocol}//${url.hostname}${url.port ? ':' + url.port : ''}`;
+    const invitationUrl = `${baseUrl}/invite/${invitation.invitation_token}`;
+    
+    console.log("🌐 Invitation URL:", invitationUrl);
 
     // Send invitation email
+    console.log("📧 Sending email to:", email);
     const emailResponse = await resend.emails.send({
       from: "Gestor de Tareas <onboarding@resend.dev>",
       to: [email],
@@ -114,12 +133,14 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
-    console.log("Invitation email sent successfully:", emailResponse);
+    console.log("✅ Email sent successfully!");
+    console.log("📨 Resend response:", emailResponse);
 
     return new Response(JSON.stringify({ 
       success: true, 
       message: "Invitación enviada correctamente",
-      invitationId: invitation.id 
+      invitationId: invitation.id,
+      invitationUrl: invitationUrl 
     }), {
       status: 200,
       headers: {
@@ -128,9 +149,13 @@ const handler = async (req: Request): Promise<Response> => {
       },
     });
   } catch (error: any) {
-    console.error("Error in send-team-invitation function:", error);
+    console.error("💥 ERROR in send-team-invitation function:", error);
+    console.error("📄 Error stack:", error.stack);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: "Check function logs for more information"
+      }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },

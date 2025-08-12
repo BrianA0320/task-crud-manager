@@ -69,22 +69,34 @@ export const useTeamManagement = () => {
         return { success: false, error: 'El miembro ya existe' };
       }
 
-      // Check if there's already a pending invitation
+      // Check if there's already a pending invitation (and allow retry after 5 minutes)
       const { data: existingInvitation } = await supabase
         .from('team_invitations')
-        .select('id')
+        .select('id, created_at')
         .eq('team_owner_id', user.id)
         .eq('invitee_email', email)
         .eq('status', 'pending')
         .single();
 
       if (existingInvitation) {
-        toast({
-          title: "Error",
-          description: "Ya hay una invitación pendiente para este email",
-          variant: "destructive",
-        });
-        return { success: false, error: 'Invitación pendiente' };
+        const createdAt = new Date(existingInvitation.created_at);
+        const now = new Date();
+        const diffMinutes = (now.getTime() - createdAt.getTime()) / (1000 * 60);
+        
+        if (diffMinutes < 5) {
+          toast({
+            title: "Invitación reciente",
+            description: `Ya hay una invitación pendiente para este email. Puedes reenviar en ${Math.ceil(5 - diffMinutes)} minutos.`,
+            variant: "destructive",
+          });
+          return { success: false, error: 'Invitación reciente' };
+        } else {
+          // Delete old pending invitation to allow new one
+          await supabase
+            .from('team_invitations')
+            .delete()
+            .eq('id', existingInvitation.id);
+        }
       }
 
       // Send invitation via edge function
