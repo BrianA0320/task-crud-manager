@@ -29,6 +29,7 @@ const UserProfileDropdown = () => {
   const { user, signOut } = useAuth();
   const { teamMembers, addTeamMember, removeTeamMember, activateTeamMember, loading } = useTeamManagement();
   const [showTeamDialog, setShowTeamDialog] = useState(false);
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [newMemberEmail, setNewMemberEmail] = useState('');
   const [newMemberName, setNewMemberName] = useState('');
   const [isAddingMember, setIsAddingMember] = useState(false);
@@ -94,7 +95,7 @@ const UserProfileDropdown = () => {
             <Users className="mr-2 h-4 w-4" />
             <span>Gestionar Equipo</span>
           </DropdownMenuItem>
-          <DropdownMenuItem className="text-foreground hover:bg-accent">
+          <DropdownMenuItem onClick={() => setShowSettingsDialog(true)} className="text-foreground hover:bg-accent">
             <Settings className="mr-2 h-4 w-4" />
             <span>Configuración</span>
           </DropdownMenuItem>
@@ -229,6 +230,83 @@ const UserProfileDropdown = () => {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowTeamDialog(false)}>
+              Cerrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Settings Dialog */}
+      <Dialog open={showSettingsDialog} onOpenChange={setShowSettingsDialog}>
+        <DialogContent className="sm:max-w-[500px] bg-background border border-border">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Configuración</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Personaliza tu experiencia en la aplicación.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Profile Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm text-foreground">Perfil de Usuario</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center space-x-3">
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={user?.user_metadata?.avatar_url} alt="Avatar" />
+                    <AvatarFallback className="bg-primary text-primary-foreground">
+                      {getUserInitials()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium text-foreground">{getUserDisplayName()}</p>
+                    <p className="text-sm text-muted-foreground">{user?.email}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Account Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm text-foreground">Información de la Cuenta</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <Label className="text-muted-foreground">Cuenta creada</Label>
+                    <p className="text-foreground">
+                      {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'No disponible'}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">Último acceso</Label>
+                    <p className="text-foreground">
+                      {user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : 'No disponible'}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Team Statistics */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm text-foreground">Estadísticas del Equipo</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Miembros del equipo</span>
+                  <Badge variant="secondary">{teamMembers.length}</Badge>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSettingsDialog(false)}>
               Cerrar
             </Button>
           </DialogFooter>
