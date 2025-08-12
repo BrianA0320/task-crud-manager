@@ -38,7 +38,7 @@ const Auth = () => {
             title: "¡Bienvenido!",
             description: "Has iniciado sesión correctamente"
           });
-          navigate('/');
+          navigate('/dashboard');
         }
       } else {
         const { error } = await signUp(email, password, fullName);
