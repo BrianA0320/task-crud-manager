@@ -111,6 +111,9 @@ const UserProfileDropdown = () => {
         <DialogContent className="sm:max-w-[600px] bg-background border border-border">
           <DialogHeader>
             <DialogTitle className="text-foreground">Gestionar Equipo</DialogTitle>
+            <div className="text-sm text-muted-foreground bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-md p-3 mb-4">
+              ⚠️ Esta funcionalidad está en desarrollo y aún no está terminada
+            </div>
             <DialogDescription className="text-muted-foreground">
               Agrega miembros a tu equipo para poder asignarles tareas.
             </DialogDescription>
